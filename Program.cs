@@ -1,5 +1,18 @@
 ﻿using System.Collections.Concurrent;
 
+
+for (int i = 0; i < 100; i++)
+{
+    int counter = i;
+
+    MyThreadPool.QueueWorkItem(delegate
+    {
+        Console.WriteLine($"Task {counter} has been grabbed and run by a thread!");
+        Thread.Sleep(500);
+    });
+}
+Console.ReadLine();
+
 static class MyThreadPool
 {
     // a blocking collection of actions/workitems (action is a delegate, a managed pointer to a method)
@@ -24,11 +37,14 @@ static class MyThreadPool
             {
                 while (true)
                 {
+                    Console.WriteLine("Thread is waiting for a task...");
                     Action workItem = workItems.Take();
+                    Console.WriteLine("Thread is running a task...");
                     workItem();
+                    Console.WriteLine("Thread completed a task!");
                 }
             })
-            .Start();
+            {IsBackground = true }.Start();
         }
     }
 }
