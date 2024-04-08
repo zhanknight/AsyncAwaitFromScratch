@@ -1,6 +1,12 @@
 ﻿using System.Collections.Concurrent;
 using System.Runtime.ExceptionServices;
 
+
+
+// demo the implementation
+//
+//
+List<MyTask> taskList = new();
 AsyncLocal<int> asyncLocal = new();
 
 for (int i = 0; i < 100; i++)
@@ -9,14 +15,21 @@ for (int i = 0; i < 100; i++)
 
     Thread.Sleep(Random.Shared.Next(50, 1000));
 
-    MyThreadPool.QueueWorkItem(delegate
+    taskList.Add(MyTask.Run(delegate
     {
         //Console.WriteLine($"Task {asyncLocal.Value} has been grabbed and run by a thread!");
         Thread.Sleep(Random.Shared.Next(1000, 4500));
-    });
+    }));
 }
-Console.ReadLine();
 
+foreach (var t in taskList) t.Wait();
+// 
+//
+// demo the implementation
+
+
+
+// Implement simple task class
 class MyTask
 {
     private bool _completed;
@@ -93,10 +106,35 @@ class MyTask
         }
     }
 
+    public static MyTask Run(Action action)
+    {
+        MyTask mt = new MyTask();
 
+        MyThreadPool.QueueWorkItem(() =>
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception e)
+            {
+                mt.SetException(e);
+                return;
+            }
+            mt.SetResult();
+        });
+
+        return mt;
+    }
+
+    // delay
+    // whenall
+    // whenany
+    // iterate
 
 }
 
+// Implement a basic thread pool
 static class MyThreadPool
 {
     // a blocking collection of actions/workitems (action is a delegate, a managed pointer to a method)
